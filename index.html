@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<link rel="stylesheet" href="css/style.css">
+	<title>Sea Route Client</title>
+</head>
+
+<body>
+	<noscript>Enable JavaScript in your browser</noscript>
+
+	<div id="right-panel">
+		<div id="inputs">
+			<input id="txtFrom" type="text" placeholder="From" autocomplete="off">	
+			<input id="txtTo" type="text" placeholder="To" autocomplete="off">  
+			<select id="ddlUnits">
+				<option value="nm">Nautical Miles</option>
+				<option value="degrees">Degrees</option>
+				<option value="kilometers">Kilometers</option>
+				<option value="miles">Miles</option>
+				<option value="radians">Radians</option>
+			</select>			
+			<button id="btnSearch" onclick="onSearch()">Search</button>
+		</div>
+		<div>
+			<strong>Sea Route</strong>
+		</div>
+		<div id="output"></div>
+		<div id="directions"></div>
+	</div>
+	<div id="map"></div>
+	<div id="loader"></div>
+
+	<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBqxN1GoVpOe7fOWnFbax5tCf1OJvO_5XY&libraries=places&callback=initMap"></script>
+	<script src="js/index.js"></script>
+</body>
+
+</html>
