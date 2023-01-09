@@ -1,7 +1,9 @@
-﻿var path = [];
+﻿var url = 'https://sea-route-server.azurewebsites.net/';
+var path = [];
 var markers = [];
 var from = null;
 var to = null;
+var geocoding = false;
 var geocoder = null;
 var polyline = null;
 var map = null;
@@ -95,20 +97,27 @@ function onSearch() {
 }
 
 function waitForGeocodes() {
+	// Valid geocodes
 	if (from && to) {
+		geocoding = false;
+	}
+	
+	if (geocoding) {
+		setTimeout(waitForGeocodes, 100);	
+	} else if (from && to) {
 		fetchSeaRoute();
 	} else {
-		setTimeout(waitForGeocodes, 100);		
-	}
+		stopSearch();
+	}	
 }
 
 function fetchSeaRoute() {
-	fetch('https://sea-route-server.azurewebsites.net/', {
+	fetch(url, {
 		method: 'POST',
 		body: JSON.stringify({
 			units: document.getElementById('ddlUnits').value,
-			origin: from.gps,
-			destination: to.gps
+			origin: from.position,
+			destination: to.position
 		}),
 		headers: {
 			'Content-type': 'application/json; charset=UTF-8',
@@ -116,30 +125,27 @@ function fetchSeaRoute() {
 	})
 	.then((response) => response.json())
 	.then((json) => {
-		//console.log(JSON.stringify(json));
 		drawRoute(json);
 		stopSearch();		
 	});		
 }
 
 function drawRoute(route) {
-	
+	// No Sea Route
 	if (route == null) {
+		console.log('Sea Route Not Found!');
 		alert('Sea Route Not Found!\n' +
-		 'Try a larger Sea Port!');
+		 'Try another Sea Port!');
 		return;
-	}
+	} 
 	
 	path = [];	 
+	console.log('Sea Route:');
+	console.log(JSON.stringify(route));	
 	var output = document.getElementById('output');
 	var coordinates = route.geometry.coordinates;
 	var bounds = new google.maps.LatLngBounds();
-	
-	// Remove old polyline
-	if (polyline != null) {
-		polyline.setMap(null);
-	}
-	
+		
 	// Display distance
 	output.innerText = 'Distance is: ' + 
 		route.properties.length.toFixed(2) +
@@ -147,14 +153,14 @@ function drawRoute(route) {
 	
 	// Set path and bounds
 	for (i = 0; i < coordinates.length; i++) {
-		var gps = coordinates[i];
+		var coordinate = coordinates[i];
 		path.push({
-			lat: gps[1],
-			lng: gps[0]
+			lat: coordinate[1],
+			lng: coordinate[0]
 		});
 		bounds.extend({
-			lat: gps[1],
-			lng: gps[0]
+			lat: coordinate[1],
+			lng: coordinate[0]
 		});
 	}
 	addMarkers();
@@ -172,6 +178,7 @@ function drawRoute(route) {
 }
 
 function addMarkers() {
+	// Add markers to start and end of polyline
 	createMarker(path[0], from.address);
 	createMarker(path[path.length - 1], to.address);	
 }
@@ -179,6 +186,13 @@ function addMarkers() {
 function startSearch() {
 	to = null;
 	from = null;
+	geocoding = true;
+	
+	// Remove polyline
+	if (polyline != null) {
+		polyline.setMap(null);
+	}	
+	
 	deleteMarkers();
 	show('loader');
 	disable('btnSearch');
@@ -209,14 +223,18 @@ function geoCodeFrom(address) {
 	geocoder.geocode({'address': address}, function(results, status) {
 		if (status == 'OK') {
 			//console.log(JSON.stringify(results));
-			var position = results[0].geometry.location;
-			//console.log(JSON.stringify(position));
+
 			from = {
 				address: address,
-				gps: position
+				position: results[0].geometry.location
 			};
+			
+			console.log('From:');
+			console.log(JSON.stringify(from));
 		} else {
-			alert('Failed to geocode address reason: ' + status);
+			geocoding = false;
+			alert('Failed to geocode from address \n' + 
+				address + ' reason ' + status);
 		}
 	});
 }
@@ -225,14 +243,18 @@ function geoCodeTo(address) {
 	geocoder.geocode({'address': address}, function(results, status) {
 		if (status == 'OK') {
 			//console.log(JSON.stringify(results));
-			var position = results[0].geometry.location;
-			//console.log(JSON.stringify(position));
+			
 			to = {
 				address: address,
-				gps: position
+				position: results[0].geometry.location
 			};
+
+			console.log('To:');
+			console.log(JSON.stringify(to));
 		} else {
-			alert('Failed to geocode address reason: ' + status);
+			geocoding = false;
+			alert('Failed to geocode to address \n' + 
+				address + ' reason ' + status);
 		}
 	});
 }
